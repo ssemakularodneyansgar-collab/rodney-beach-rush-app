@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌴 Rodney Beach Rush</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #gameContainer {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      background: linear-gradient(to bottom, #87ceeb 0%, #e0f6ff 50%, #f0e68c 100%);
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* UI Overlay */
+    #uiOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+      font-size: 18px;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .menu-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #006994 0%, #00a8cc 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      pointer-events: all;
+    }
+
+    .menu-screen.hidden {
+      display: none;
+    }
+
+    .menu-logo {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .menu-title {
+      font-size: 48px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .menu-subtitle {
+      font-size: 20px;
+      color: #ffffcc;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .menu-button {
+      padding: 20px 30px;
+      font-size: 22px;
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      color: #333;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      min-height: 60px;
+    }
+
+    .menu-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .menu-button:active {
+      transform: scale(0.98);
+    }
+
+    .menu-info {
+      font-size: 16px;
+      color: #ffffcc;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    /* HUD */
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 18px;
+    }
+
+    .speedometer {
+      font-size: 32px;
+      font-weight: bold;
+      text-align: right;
+    }
+
+    .lap-info {
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .position-info {
+      font-size: 20px;
+    }
+
+    /* Loading screen */
+    .loading-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      pointer-events: all;
+    }
+
+    .loading-screen.hidden {
+      display: none;
+    }
+
+    .loading-logo {
+      font-size: 100px;
+      margin-bottom: 20px;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 24px;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      margin-bottom: 20px;
+    }
+
+    .loading-bar {
+      width: 200px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      overflow: hidden;
+      border: 3px solid white;
+    }
+
+    .loading-progress {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd700, #ffed4e);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Controls */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .control-button {
+      padding: 30px;
+      font-size: 32px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 3px solid white;
+      border-radius: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      user-select: none;
+    }
+
+    .control-button:active {
+      background: rgba(255, 255, 255, 1);
+      transform: scale(0.95);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .menu-title {
+        font-size: 36px;
+      }
+
+      .menu-button {
+        font-size: 18px;
+        padding: 15px 25px;
+        min-height: 50px;
+      }
+
+      .hud-top, .hud-bottom {
+        font-size: 16px;
+      }
+
+      .speedometer {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="canvas"></canvas>
+    
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+      <div class="loading-logo">🌴</div>
+      <div class="loading-text">Loading the island…</div>
+      <div class="loading-bar">
+        <div class="loading-progress" id="loadingProgress"></div>
+      </div>
+      <div class="loading-text" style="font-size: 14px; margin-top: 20px;">🌴 ☀️ 🌊</div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="mainMenu" class="menu-screen">
+      <div class="menu-logo">🌴</div>
+      <div class="menu-title">RODNEY<br>BEACH RUSH</div>
+      <div class="menu-subtitle">"Relax, Race, and Enjoy the Ride."</div>
+      
+      <div class="menu-buttons">
+        <button class="menu-button" onclick="startGame()">▶  PLAY</button>
+        <button class="menu-button" onclick="showStages()">🏝️  STAGES</button>
+        <button class="menu-button" onclick="showSettings()">⚙️  SETTINGS</button>
+        <button class="menu-button" onclick="showHowToPlay()">❓  HOW TO PLAY</button>
+      </div>
+
+      <div class="menu-info">
+        A relaxing 3-lap beach race • Best enjoyed in landscape 📱<br>
+        🪙 <span id="coinsDisplay">0</span> coins collected
+      </div>
+    </div>
+
+    <!-- Game HUD -->
+    <div id="uiOverlay">
+      <div class="hud-top">
+        <div class="position-info" id="positionInfo">P1 / 4</div>
+        <div class="lap-info" id="lapInfo">LAP 1/3</div>
+        <button class="menu-button" style="position: absolute; top: 20px; right: 20px; padding: 10px 20px; font-size: 16px;" onclick="pauseGame()">⏸ PAUSE</button>
+      </div>
+
+      <div class="hud-bottom">
+        <div id="timerInfo">00:00</div>
+        <div class="speedometer" id="speedometer">0 km/h</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Game state
+    let gameState = {
+      isRunning: false,
+      isPaused: false,
+      currentLap: 1,
+      totalLaps: 3,
+      position: 1,
+      totalRacers: 4,
+      speed: 0,
+      coins: 0,
+      startTime: null,
+      pausedTime: 0
+    };
+
+    // Initialize loading animation
+    function initializeGame() {
+      const loadingProgress = document.getElementById('loadingProgress');
+      let progress = 0;
+      
+      const interval = setInterval(() => {
+        progress += Math.random() * 30;
+        if (progress > 100) progress = 100;
+        
+        loadingProgress.style.width = progress + '%';
+        
+        if (progress === 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            document.getElementById('loadingScreen').classList.add('hidden');
+          }, 500);
+        }
+      }, 200);
+    }
+
+    // Menu functions
+    function startGame() {
+      gameState.isRunning = true;
+      gameState.startTime = Date.now();
+      document.getElementById('mainMenu').classList.add('hidden');
+      document.getElementById('loadingScreen').classList.add('hidden');
+      
+      // Simulate game loop
+      gameLoop();
+    }
+
+    function showStages() {
+      alert('🏝️ STAGES\n\nTraditional Beach Course:\nStart → Tropical Beach → Palm Tree Road → Gentle Corner → Wooden Bridge → Small Ramp → Forest Road → Ocean View → Beach Road → Finish\n\nMore stages coming soon!');
+    }
+
+    function showSettings() {
+      alert('⚙️ SETTINGS\n\nDifficulty: EASY / NORMAL / HARD\nDriving Assist: ON / OFF\nSound: ON / OFF\nGraphics: NICE / FAST\n\nSettings saved to device.');
+    }
+
+    function showHowToPlay() {
+      alert('❓ HOW TO PLAY\n\nCONTROLS (PAD MODE):\n▲ GO - Accelerate\n◀ LEFT / ▶ RIGHT - Steer\n■ BRAKE - Slow down\n\nSPEED SETTINGS:\n🐢 CALM: ~45 km/h (relaxed)\n🏃 NORMAL: ~56 km/h (balanced)\n🚀 FAST: ~67 km/h (competitive)\n\nRace 3 laps against Sunny, Coco & Breezy!\n\nDesktop: Arrow keys or WASD, Space = brake');
+    }
+
+    function pauseGame() {
+      if (gameState.isRunning) {
+        gameState.isPaused = !gameState.isPaused;
+        alert(gameState.isPaused ? '⏸ PAUSED' : '▶ RESUMED');
+      }
+    }
+
+    // Game loop
+    function gameLoop() {
+      if (!gameState.isRunning || gameState.isPaused) return;
+
+      // Update time
+      const elapsed = Math.floor((Date.now() - gameState.startTime + gameState.pausedTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      document.getElementById('timerInfo').textContent = 
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+      // Simulate speed variation
+      gameState.speed = Math.floor(Math.random() * 67);
+
+      // Update HUD
+      document.getElementById('speedometer').textContent = gameState.speed + ' km/h';
+      document.getElementById('positionInfo').textContent = `P${gameState.position} / ${gameState.totalRacers}`;
+      document.getElementById('lapInfo').textContent = `LAP ${gameState.currentLap}/${gameState.totalLaps}`;
+
+      // Simulate lap progression (every 30 seconds for demo)
+      if (elapsed > 0 && elapsed % 30 === 0 && gameState.currentLap < gameState.totalLaps) {
+        gameState.currentLap++;
+        gameState.coins += Math.floor(Math.random() * 10);
+        document.getElementById('coinsDisplay').textContent = gameState.coins;
+      }
+
+      // Check if race finished
+      if (gameState.currentLap > gameState.totalLaps) {
+        finishRace();
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function finishRace() {
+      gameState.isRunning = false;
+      alert(`🏁 RACE FINISHED!\n\nPosition: ${gameState.position}\nCoins: ${gameState.coins}\n\nWell done! Play again?`);
+      location.reload();
+    }
+
+    // Initialize on load
+    window.addEventListener('load', () => {
+      initializeGame();
+    });
+
+    // Keyboard controls (for demonstration)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        // Accelerate
+        gameState.speed = Math.min(gameState.speed + 5, 67);
+      }
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        // Decelerate
+        gameState.speed = Math.max(gameState.speed - 5, 0);
+      }
+      if (e.key === ' ') {
+        // Brake
+        e.preventDefault();
+        gameState.speed = 0;
+      }
+    });
+  </script>
+</body>
+</html>
